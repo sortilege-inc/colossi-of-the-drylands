@@ -242,7 +242,7 @@ article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(
 .portrait-frame::after{ content:""; position:absolute; inset:4px; border:1px solid var(--edge-soft); pointer-events:none; }
 .portrait-frame img{
   display:block; width:100%; height:auto;
-  filter:sepia(0.22) contrast(1.04) brightness(0.94);
+  filter:contrast(1.04) saturate(1.03);
   background:var(--dusk);
 }
 .portrait-frame figcaption{
@@ -306,7 +306,7 @@ article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(
   box-shadow:var(--shadow-deep); transition:.2s;
 }
 .pcard:hover .frame{ border-color:var(--ochre); }
-.pcard .frame img{ width:100%; height:100%; object-fit:cover; filter:sepia(0.28) brightness(0.88) contrast(1.06); }
+.pcard .frame img{ width:100%; height:100%; object-fit:cover; filter:contrast(1.04) brightness(0.97); }
 .pcard .frame .initial{ font-family:var(--slab); font-size:2.8rem; color:var(--stone-3); }
 .pcard .nm{ font-family:var(--caps); font-size:0.84rem; letter-spacing:0.06em; color:var(--bone); margin-top:0.55rem; display:block; }
 .pcard .rl{ font-family:var(--serif); font-style:italic; font-size:0.78rem; color:var(--dust); }
