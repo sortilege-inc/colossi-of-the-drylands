@@ -13,6 +13,8 @@
      • weapon.count — a fixed number of damage dice, for weapons whose
        printed damage is not Proficiency-scaled.
      • armor[].equipped is honoured when no top-level armorName is given.
+     • weaponEquipped() falls back to the SHEET default for a weapon with no
+       saved key, so renaming or adding one does not orphan it.
    ============================================================ */
 (function () {
   "use strict";
@@ -110,6 +112,14 @@
       thresholds: a ? { major: a.major + S.level + tb, severe: a.severe + S.level + tb }
                     : { major: S.level + tb, severe: S.level + tb }
     };
+  }
+  /* Equipped state for a weapon. A weapon renamed or added after a player
+     already saved state has no key yet — fall back to the SHEET default
+     rather than silently showing it unequipped. */
+  function weaponEquipped(w) {
+    if (w.beast) return true;
+    var m = state.equip.weapons;
+    return Object.prototype.hasOwnProperty.call(m, w.name) ? !!m[w.name] : !!w.equipped;
   }
   /* Number of damage dice: an explicit count wins, else Proficiency, else one. */
   function damageDiceCount(w) {
@@ -330,9 +340,9 @@
 
   /* ---------- equipment (Equipped / Inventory tabs) ---------- */
   function weaponRow(w) {
-    var equipped = w.beast ? true : !!state.equip.weapons[w.name];
+    var equipped = weaponEquipped(w);
     var row = el("div", "weapon" + (equipped ? " is-eq" : "") + (w.beast ? " beast-wp" : ""));
-    var dmg = ((w.multiplier === "prof") ? S.proficiency : 1) + w.dice + (w.bonus ? "+" + w.bonus : "");
+    var dmg = damageDiceCount(w) + w.dice + (w.bonus ? "+" + w.bonus : "");
     row.appendChild(el("div", "wp-name", esc(w.name) +
       '<span class="wp-meta">' + cap(w.trait || "—") + " · " + prettyRange(w.range) + " · " + dmg + " " +
       esc((w.damageType || []).join("/")) + (w.secondary ? " · secondary" : "") + "</span>"));
@@ -379,7 +389,7 @@
     var panel = el("div", "eq-panel");
     if (equipTab === "equipped") {
       var bw = beastformWeapon();
-      var eqW = S.weapons.filter(function (w) { return state.equip.weapons[w.name]; });
+      var eqW = S.weapons.filter(weaponEquipped);
       var eqA = S.armor.filter(function (a) { return a.name === state.equip.armor; });
       if (bw) panel.appendChild(weaponRow(bw));
       if (bw || eqW.length || eqA.length) {
