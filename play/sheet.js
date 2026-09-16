@@ -15,11 +15,14 @@
      • armor[].equipped is honoured when no top-level armorName is given.
      • weaponEquipped() falls back to the SHEET default for a weapon with no
        saved key, so renaming or adding one does not orphan it.
-     • feature.damageRider {dice, appliesTo, label} — a feature that, while
-       switched on, adds a die to damage rolls with the weapons it covers
-       (appliesTo: "primary" | "all" | an exact weapon name). Toggling it on
-       pays the feature's costs; toggling it off is free. Earthkin Ignition
-       is the first of these.
+     • damageRider {dice?, bonus?, appliesTo, label, duration, costs?} on a
+       feature OR on a weapon — while switched on it adds a die and/or a flat
+       bonus to damage rolls with the weapons it covers (appliesTo: "primary"
+       | "all" | an exact weapon name). duration "scene" stays lit until a
+       rest; "once" is consumed by the next damage roll it applies to.
+       Switching it on pays its costs; switching it off is free. Earthkin
+       Ignition (feature, d6, scene) and the Ember Pitch's Quick Shot
+       (weapon, +4, once) are the two in play.
    ============================================================ */
 (function () {
   "use strict";
@@ -128,23 +131,40 @@
     var m = state.equip.weapons;
     return Object.prototype.hasOwnProperty.call(m, w.name) ? !!m[w.name] : !!w.equipped;
   }
-  /* Features that add a die to damage while switched on (e.g. Ignition). */
-  function riderFeatures() {
-    return (S.features || []).filter(function (f) { return f.damageRider; });
+  /* Riders: things that buff a damage roll while switched on. They may be
+     hosted by a feature (Ignition) or by a weapon (the Ember Pitch's Quick
+     Shot, which buffs the primary rather than itself). */
+  function allRiders() {
+    var out = [];
+    (S.features || []).forEach(function (f) {
+      if (!f.damageRider) return;
+      out.push({ id: f.name, host: null, text: f.text || "", spec: f.damageRider,
+                 label: f.damageRider.label || f.name,
+                 costs: f.damageRider.costs || f.costs || [] });
+    });
+    (S.weapons || []).forEach(function (w) {
+      if (!w.damageRider) return;
+      out.push({ id: "weapon:" + w.name, host: w.name, text: w.feature || "", spec: w.damageRider,
+                 label: w.damageRider.label || w.name,
+                 costs: w.damageRider.costs || [] });
+    });
+    return out;
   }
-  function riderCovers(f, w) {
-    var to = f.damageRider.appliesTo || "primary";
+  function riderCovers(r, w) {
+    var to = r.spec.appliesTo || "primary";
     if (to === "all") return true;
     if (to === "primary") return !w.secondary;
     return to === w.name;
   }
   function ridersFor(w) {
-    return riderFeatures().filter(function (f) {
-      return state.riders[f.name] && riderCovers(f, w);
-    });
+    return allRiders().filter(function (r) { return state.riders[r.id] && riderCovers(r, w); });
+  }
+  function riderAmount(r) {
+    return (r.spec.dice ? "+1" + r.spec.dice : "") +
+           (r.spec.bonus ? (r.spec.dice ? " " : "") + "+" + r.spec.bonus : "");
   }
   function riderSuffix(w) {
-    return ridersFor(w).map(function (f) { return " +1" + f.damageRider.dice; }).join("");
+    return ridersFor(w).map(function (r) { return " " + riderAmount(r); }).join("");
   }
   /* Number of damage dice: an explicit count wins, else Proficiency, else one. */
   function damageDiceCount(w) {
@@ -297,16 +317,20 @@
     var dice = rolls.map(function (r) { return { sides: sides, value: r, shape: "square", tag: "adv" }; });
     /* Rider dice (Ignition and the like) roll alongside, and max out on a crit
        the same way the weapon's own dice do. */
-    var riders = ridersFor(w), riderNote = "";
-    riders.forEach(function (f) {
-      var rs = parseInt((f.damageRider.dice || "d6").replace("d", ""), 10) || 6;
-      var rr = d(rs);
-      sum += rr;
-      if (isCrit) critBonus += rs;
-      dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
-      riderNote += ' <span class="lg-eff">+1d' + rs + " " +
-        esc(f.damageRider.label || f.name) + "</span>";
+    var riders = ridersFor(w), riderNote = "", spent = false;
+    riders.forEach(function (r) {
+      if (r.spec.dice) {
+        var rs = parseInt(r.spec.dice.replace("d", ""), 10) || 6;
+        var rr = d(rs);
+        sum += rr;
+        if (isCrit) critBonus += rs;
+        dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
+      }
+      if (r.spec.bonus) sum += r.spec.bonus;
+      riderNote += ' <span class="lg-eff">' + riderAmount(r) + " " + esc(r.label) + "</span>";
+      if (r.spec.duration === "once") { state.riders[r.id] = false; spent = true; }
     });
+    if (spent) { save(); setTimeout(renderEquipment, 0); }
     var total = sum + critBonus + (w.bonus || 0);
     Dice.roll({
       mount: mount, dice: dice,
@@ -393,15 +417,15 @@
     var dm = el("button", "mini", "Damage"); dm.addEventListener("click", function () { damageRoll(w, false, rollMount); rollResult.textContent = ""; });
     var dmc = el("button", "mini ghost", "Crit"); dmc.addEventListener("click", function () { damageRoll(w, true, rollMount); rollResult.textContent = ""; });
     acts.appendChild(atk); acts.appendChild(dm); acts.appendChild(dmc);
-    riderFeatures().forEach(function (f) {
-      if (!riderCovers(f, w)) return;
-      var lit = !!state.riders[f.name];
-      var label = f.damageRider.label || f.name;
+    allRiders().forEach(function (r) {
+      if (r.host ? (r.host !== w.name) : !riderCovers(r, w)) return;
+      var lit = !!state.riders[r.id];
+      var label = r.label, f = r;
       var b = el("button", "mini rider" + (lit ? " on" : ""), (lit ? "\u25c6 " : "") + label);
-      b.title = f.text || "";
+      b.title = r.text || "";
       b.addEventListener("click", function () {
         if (lit) {
-          state.riders[f.name] = false; save();
+          state.riders[r.id] = false; save();
           logRoll('<span class="lg-label">' + esc(label) + '</span> <span class="lg-eff">\u2192 out</span>');
         } else {
           var costs = f.costs || [];
@@ -411,9 +435,10 @@
             if (c.key === "stress" && state.stress + c.value > S.stressMax) { notify("Not enough Stress slots."); return; }
           }
           costs.forEach(function (c) { applyCost(c, label); });
-          state.riders[f.name] = true; save();
-          logRoll('<span class="lg-label">' + esc(label) + '</span> <span class="lg-eff">\u2192 ablaze, +1' +
-            esc(f.damageRider.dice) + ' damage until the scene ends</span>');
+          state.riders[r.id] = true; save();
+          logRoll('<span class="lg-label">' + esc(label) + '</span> <span class="lg-eff">\u2192 ' +
+            esc(riderAmount(r)) + (r.spec.duration === "once"
+              ? " on the next damage roll" : " damage until the scene ends") + "</span>");
         }
         renderEquipment();
       });
@@ -554,8 +579,8 @@
     var periods = kind === "long" ? ["short", "long", "rest", "session"] : ["short", "rest"];
     S.features.forEach(function (f) {
       if (f.uses && periods.indexOf(f.uses.period) !== -1) state.uses[f.name] = 0;
-      if (f.damageRider) state.riders[f.name] = false;   /* a rest ends the scene */
     });
+    allRiders().forEach(function (r) { state.riders[r.id] = false; });  /* a rest ends the scene */
     save();
     logRoll('<span class="lg-label">' + (kind === "long" ? "Long" : "Short") + " Rest complete</span>" +
       '<span class="lg-eff">→ ' + (kind === "long" ? "long-rest" : "short-rest") + " features reset · GM gains Fear</span>");
