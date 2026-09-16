@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
+  <rect width="64" height="64" fill="#100c0a"/>
+  <!-- low sun -->
+  <circle cx="32" cy="30" r="15" fill="#d39440" opacity="0.32"/>
+  <!-- mesa silhouettes -->
+  <path d="M0 46h10l3-9h14l3 9h6l4-13h12l4 13h8v18H0z" fill="#241a13"/>
+  <path d="M0 52h64v12H0z" fill="#18120f"/>
+  <!-- essentia shard coming up through the ground -->
+  <path d="M32 18l7 13-7 22-7-22z" fill="#5ed6c6"/>
+  <path d="M32 18l7 13-7 5-7-5z" fill="#a8f0e5"/>
+</svg>

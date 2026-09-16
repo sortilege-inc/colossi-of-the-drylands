@@ -1,0 +1,447 @@
+/* ============================================================
+   COLOSSI OF THE DRYLANDS — a Daggerheart chronicle
+   drylands.css — sun-bleached western broadside, lit from below
+   by something that should have stayed buried.
+
+   Two temperatures, and the whole theme lives in the gap between
+   them: everything mortal is warm (dust, rust, ochre, bone —
+   the sun and the things it has faded), and everything divine is
+   cold (essentia teal, blight violet). Warm is the world; cold is
+   what is coming up through it. Use the cold sparingly — it should
+   read as wrong.
+   ============================================================ */
+
+:root{
+  /* --- dusk & dust (ground) --- */
+  --night:     #100c0a;
+  --dusk:      #18120f;
+  --stone:     #221a15;
+  --stone-2:   #2b211a;
+  --stone-3:   #392c22;
+  --edge:      #57422f;
+  --edge-soft: rgba(216,190,152,0.14);
+  --edge-hair: rgba(216,190,152,0.30);
+
+  /* --- bone & sand (text) --- */
+  --bone:      #e6dac4;
+  --bone-2:    #ccb999;
+  --dust:      #9d8a71;
+  --dust-dim:  #7a6a56;
+  --sand:      #d8be98;
+  --sand-lit:  #f4e9d5;
+
+  /* --- heat (accents) --- */
+  --ochre:      #d39440;
+  --ochre-soft: rgba(211,148,64,0.55);
+  --rust:       #b0472c;
+  --rust-soft:  rgba(176,71,44,0.45);
+  --sun:        #f0b45c;
+
+  /* --- the cold things --- */
+  --essentia:     #5ed6c6;   /* god-blood crystal — links, glow */
+  --essentia-lit: #a8f0e5;
+  --essentia-dim: rgba(94,214,198,0.30);
+  --blight:       #8f72c6;   /* Godfell's ruined ground — GM/veil */
+
+  --glow:        0 0 18px rgba(94,214,198,0.18);
+  --heat:        0 0 26px rgba(211,148,64,0.20);
+  --shadow-deep: 0 22px 60px rgba(0,0,0,0.62);
+
+  --serif: "Vollkorn", Georgia, "Times New Roman", serif;
+  --type:  "Special Elite", "Courier New", monospace;   /* dispatches, epigraphs */
+  --caps:  "Oswald", "Arial Narrow", sans-serif;        /* wanted-poster caps */
+  --slab:  "Alfa Slab One", Georgia, serif;             /* numerals, drop caps */
+  --wood:  "Rye", "Alfa Slab One", Georgia, serif;      /* mastheads */
+}
+
+/* ------------------------------------------------------------ base */
+*{ box-sizing:border-box; }
+html{ scroll-behavior:smooth; }
+body{
+  margin:0;
+  font-family:var(--serif);
+  font-size:19px;
+  line-height:1.68;
+  color:var(--bone);
+  background-color:var(--night);
+  background-image:
+    /* low sun burning off the top of the page */
+    radial-gradient(1300px 620px at 50% -12%, rgba(211,148,64,0.26), transparent 62%),
+    /* heat haze off the mesas */
+    radial-gradient(900px 700px at 88% 6%, rgba(176,71,44,0.18), transparent 58%),
+    /* something cold under the floor */
+    radial-gradient(1500px 900px at 20% 118%, rgba(50,120,116,0.16), transparent 60%),
+    radial-gradient(1400px 1000px at 50% 120%, rgba(16,12,10,0.95), transparent 62%),
+    /* dust grain */
+    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.045'/%3E%3C/svg%3E");
+  background-attachment:fixed, fixed, fixed, fixed, scroll;
+  min-height:100vh;
+}
+
+/* ------------------------------------------------------------ nav */
+.topnav{
+  position:sticky; top:0; z-index:50;
+  display:flex; flex-wrap:wrap; align-items:center; gap:0.1rem 1.3rem;
+  padding:0.7rem clamp(1rem,4vw,3rem);
+  background:linear-gradient(180deg, rgba(16,12,10,0.97), rgba(16,12,10,0.80));
+  border-bottom:1px solid var(--edge-soft);
+  box-shadow:0 1px 0 rgba(211,148,64,0.10);
+  backdrop-filter:blur(3px);
+}
+.topnav .brand{
+  font-family:var(--caps); font-weight:600; letter-spacing:0.22em;
+  text-transform:uppercase; font-size:0.72rem; color:var(--ochre);
+  margin-right:auto; white-space:nowrap;
+}
+.topnav a{
+  font-family:var(--caps); font-weight:400; font-size:0.72rem; letter-spacing:0.15em;
+  text-transform:uppercase; color:var(--dust); text-decoration:none;
+  padding:0.2rem 0; border-bottom:1px solid transparent; transition:.2s;
+}
+.topnav a:hover{ color:var(--sand-lit); }
+.topnav a.active{ color:var(--bone); border-bottom-color:var(--ochre-soft); }
+
+/* ------------------------------------------------------------ shell */
+.wrap{ max-width:1180px; margin:0 auto; padding:0 clamp(1rem,4vw,3rem) 6rem; }
+.col{ max-width:780px; margin:0 auto; }
+
+/* ------------------------------------------------------------ masthead */
+.masthead{
+  text-align:center;
+  padding:clamp(2.4rem,7vw,5rem) 1rem clamp(1.6rem,4vw,2.6rem);
+  position:relative;
+}
+.eyebrow{
+  font-family:var(--caps); text-transform:uppercase; font-weight:500;
+  letter-spacing:0.42em; font-size:0.66rem; color:var(--ochre);
+  margin:0 0 1.1rem; padding-left:0.42em;
+}
+.eyebrow::before,.eyebrow::after{ content:"✶"; margin:0 0.8em; color:var(--rust); font-size:0.8em; }
+.masthead h1{
+  font-family:var(--wood); font-weight:400;
+  font-size:clamp(2.1rem,6.6vw,4.4rem); line-height:1.02;
+  margin:0; color:var(--sand-lit);
+  text-shadow:0 3px 0 #0b0806, 0 0 34px rgba(211,148,64,0.26);
+}
+.masthead .sub{
+  font-family:var(--type);
+  font-size:clamp(0.98rem,2.2vw,1.18rem); color:var(--bone-2);
+  margin:1.2rem auto 0; max-width:46ch; line-height:1.55;
+}
+.masthead .kicker{
+  font-family:var(--caps); letter-spacing:0.24em; text-transform:uppercase;
+  font-size:0.64rem; color:var(--dust); margin-top:1.2rem;
+}
+
+/* framed cartouche around the masthead title (broadside rule) */
+.cartouche{ position:relative; display:inline-block; padding:1.3rem 2.6rem; }
+.cartouche::before, .cartouche::after{
+  content:""; position:absolute; left:0; right:0; pointer-events:none;
+  border:1px solid var(--edge-hair);
+}
+.cartouche::before{ top:0; bottom:0; }
+.cartouche::after{ top:5px; bottom:5px; left:5px; right:5px; border-color:var(--edge-soft); }
+
+/* divider — printer's star between rules */
+.flourish{
+  display:flex; align-items:center; gap:1rem;
+  margin:2.2rem auto; max-width:40rem;
+  font-family:var(--serif); font-size:0.9rem; color:var(--ochre);
+}
+.flourish::before, .flourish::after{
+  content:""; flex:1; height:1px;
+  background:linear-gradient(90deg, transparent, var(--ochre-soft), transparent);
+}
+.flourish .star::before{ content:"\2736"; }
+
+/* ------------------------------------------------------------ panels */
+.panel{
+  background:
+    linear-gradient(180deg, rgba(57,44,34,0.52), rgba(24,18,15,0.68)),
+    var(--stone);
+  border:1px solid var(--edge-soft);
+  border-radius:2px;
+  box-shadow:var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,0.035);
+  padding:clamp(1.6rem,4vw,3rem);
+  position:relative;
+}
+.panel::after{ /* inner hairline frame — a printed broadside's double rule */
+  content:""; position:absolute; inset:7px; border:1px solid var(--edge-soft);
+  border-radius:1px; pointer-events:none;
+}
+.panel > *:first-child{ margin-top:0; }
+.panel > *:last-child{ margin-bottom:0; }
+
+/* ------------------------------------------------------------ headings + prose */
+article h1,article h2,article h3,article h4{
+  font-family:var(--caps); font-weight:600; color:var(--sand-lit);
+  line-height:1.24; letter-spacing:0.02em;
+}
+article h2{
+  margin:2.4rem 0 0.9rem;
+  padding-bottom:0.4rem; border-bottom:1px solid var(--edge-soft);
+  text-transform:uppercase; letter-spacing:0.14em; font-size:1.02rem; color:var(--ochre);
+}
+article h3{
+  margin:1.7rem 0 0.5rem; color:var(--sand);
+  letter-spacing:0.08em; text-transform:uppercase; font-size:0.9rem; font-weight:500;
+}
+article h4{ font-size:1rem; color:var(--bone-2); margin:1.2rem 0 0.4rem; font-family:var(--serif); font-style:italic; letter-spacing:0; }
+article p{ margin:0 0 1.05rem; }
+article ul,article ol{ margin:0.4rem 0 1.15rem; padding-left:1.3rem; }
+article li{ margin:0.4rem 0; }
+article ul li::marker{ color:var(--ochre-soft); }
+article ul ul{ margin:0.3rem 0 0.5rem; }
+article strong{ color:var(--sand-lit); font-weight:600; }
+article em{ color:var(--bone-2); }
+article a{ color:var(--essentia); text-decoration:none; }
+article hr{ border:0; border-top:1px solid var(--edge-soft); margin:2rem 0; }
+blockquote{
+  font-family:var(--type); color:var(--bone-2);
+  border-left:2px solid var(--rust-soft); margin:1.4rem 0;
+  padding:0.2rem 0 0.2rem 1.3rem; line-height:1.6;
+}
+
+/* lede paragraph */
+.lede{ font-size:1.16rem; color:var(--bone); }
+.lede::first-letter{
+  font-family:var(--slab); float:left; font-size:3.4rem; line-height:0.86;
+  padding:0.22rem 0.62rem 0 0; color:var(--ochre); text-shadow:var(--heat);
+}
+
+/* provenance tags — `SET`, `SOURCE`, `OPEN` … in GM notes */
+article code{
+  font-family:var(--caps); font-weight:500; font-size:0.62rem; letter-spacing:0.14em;
+  text-transform:uppercase; padding:0.12rem 0.45rem; border-radius:2px;
+  border:1px solid var(--edge); color:var(--bone-2);
+  background:rgba(211,148,64,0.07); white-space:nowrap;
+}
+article code.tag-set{ color:var(--sand-lit); border-color:var(--ochre-soft); background:rgba(211,148,64,0.14); }
+article code.tag-source{ color:var(--essentia-lit); border-color:var(--essentia-dim); background:rgba(94,214,198,0.09); }
+article code.tag-open{ color:#e6a68c; border-color:var(--rust-soft); background:rgba(176,71,44,0.16); }
+article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(143,114,198,0.45); background:rgba(143,114,198,0.13); }
+
+/* ------------------------------------------------------------ wiki refs */
+.ref{
+  color:var(--essentia); text-decoration:none;
+  border-bottom:1px solid var(--essentia-dim);
+  transition:.15s;
+}
+.ref:hover{ color:var(--essentia-lit); border-bottom-color:var(--essentia-lit); background:rgba(94,214,198,0.07); }
+.ref-open{ /* unresolved link — a rumor on the wind, not yet a page */
+  color:var(--dust); border-bottom:1px dotted var(--dust-dim); cursor:help;
+}
+
+/* ------------------------------------------------------------ portraits */
+.portrait-frame{
+  float:right; width:min(320px,42%); margin:0.3rem 0 1.4rem 1.8rem;
+  padding:9px; background:var(--stone-2);
+  border:1px solid var(--edge); box-shadow:var(--shadow-deep);
+  position:relative;
+}
+.portrait-frame::after{ content:""; position:absolute; inset:4px; border:1px solid var(--edge-soft); pointer-events:none; }
+.portrait-frame img{
+  display:block; width:100%; height:auto;
+  filter:sepia(0.22) contrast(1.04) brightness(0.94);
+  background:var(--dusk);
+}
+.portrait-frame figcaption{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.18em;
+  font-size:0.6rem; color:var(--dust); text-align:center; margin-top:0.6rem;
+}
+@media (max-width:620px){ .portrait-frame{ float:none; width:100%; margin:0 0 1.5rem; } }
+
+/* hero image */
+.hero-img{
+  width:100%; max-height:420px; object-fit:cover;
+  filter:sepia(0.25) brightness(0.86) contrast(1.06);
+  border:1px solid var(--edge); box-shadow:var(--shadow-deep);
+  margin-bottom:2rem;
+}
+
+/* ------------------------------------------------------------ meta line + tags */
+.meta{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.18em;
+  font-size:0.66rem; color:var(--dust); margin:0.4rem 0 0;
+}
+.meta .sep{ color:var(--dust-dim); margin:0 0.6em; }
+.tagrow{ display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.4rem 0 1.4rem; }
+.chip{
+  font-family:var(--caps); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase;
+  color:var(--bone-2); background:rgba(211,148,64,0.09);
+  border:1px solid var(--ochre-soft); border-radius:2px; padding:0.18rem 0.6rem;
+}
+.chip.cold{ color:var(--essentia-lit); background:rgba(94,214,198,0.08); border-color:var(--essentia-dim); }
+
+/* ------------------------------------------------------------ card grids (indexes) */
+.grid{ display:grid; gap:1.1rem; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); margin:1.6rem 0; }
+.card{
+  display:block; text-decoration:none; color:inherit;
+  background:linear-gradient(180deg, rgba(57,44,34,0.44), rgba(20,15,12,0.62));
+  border:1px solid var(--edge-soft); padding:1.1rem 1.2rem; border-radius:2px;
+  transition:.2s; position:relative;
+}
+.card:hover{ border-color:var(--ochre-soft); transform:translateY(-2px); box-shadow:var(--shadow-deep); }
+.card .cat{ font-family:var(--caps); text-transform:uppercase; letter-spacing:0.2em; font-size:0.58rem; color:var(--ochre); }
+.card h3{ font-family:var(--caps); font-weight:500; color:var(--sand-lit); margin:0.35rem 0 0.5rem; font-size:1.06rem; letter-spacing:0.03em; }
+.card p{ margin:0; font-size:0.92rem; color:var(--dust); line-height:1.5; }
+.card .num{ position:absolute; top:0.55rem; right:0.9rem; font-family:var(--slab); font-size:1.5rem; color:var(--stone-3); }
+
+/* grouped index sections */
+.group-h{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.14em; font-weight:600;
+  font-size:1.02rem; color:var(--ochre); margin:2.8rem 0 0.3rem;
+  display:flex; align-items:center; gap:0.9rem;
+}
+.group-h::before{ content:"✶"; font-size:0.72rem; color:var(--rust); }
+.group-h::after{ content:""; flex:1; height:1px; background:linear-gradient(90deg, var(--ochre-soft), transparent); }
+.group-sub{ font-family:var(--type); color:var(--dust); font-size:0.92rem; margin:0 0 1rem; max-width:64ch; line-height:1.6; }
+
+/* portrait cards (people) */
+.pgrid{ display:grid; gap:1.2rem; grid-template-columns:repeat(auto-fill,minmax(180px,1fr)); margin:1.6rem 0; }
+.pcard{ text-decoration:none; color:inherit; text-align:center; }
+.pcard .frame{
+  aspect-ratio:1/1; background:var(--stone-2); border:1px solid var(--edge);
+  display:flex; align-items:center; justify-content:center; overflow:hidden; position:relative;
+  box-shadow:var(--shadow-deep); transition:.2s;
+}
+.pcard:hover .frame{ border-color:var(--ochre); }
+.pcard .frame img{ width:100%; height:100%; object-fit:cover; filter:sepia(0.28) brightness(0.88) contrast(1.06); }
+.pcard .frame .initial{ font-family:var(--slab); font-size:2.8rem; color:var(--stone-3); }
+.pcard .nm{ font-family:var(--caps); font-size:0.84rem; letter-spacing:0.06em; color:var(--bone); margin-top:0.55rem; display:block; }
+.pcard .rl{ font-family:var(--serif); font-style:italic; font-size:0.78rem; color:var(--dust); }
+
+/* simple two-column index list (atlas/relics) */
+.tlist{ columns:2; column-gap:2.4rem; margin:1.4rem 0; }
+@media (max-width:640px){ .tlist{ columns:1; } }
+.tlist a{ display:block; break-inside:avoid; color:var(--essentia); text-decoration:none; padding:0.38rem 0; border-bottom:1px solid var(--edge-soft); }
+.tlist a:hover{ color:var(--essentia-lit); }
+.tlist a .rl{ float:right; font-family:var(--caps); font-size:0.58rem; letter-spacing:0.14em; text-transform:uppercase; color:var(--dust-dim); }
+
+/* chronicle list */
+.chron{ margin:1.6rem 0; }
+.chron a{
+  display:flex; gap:1.2rem; align-items:baseline; text-decoration:none; color:inherit;
+  padding:1rem 0.4rem; border-bottom:1px solid var(--edge-soft); transition:.2s;
+  scroll-margin-top:5.5rem;
+}
+.chron a:hover{ background:rgba(211,148,64,0.06); padding-left:0.9rem; }
+.chron .no{ font-family:var(--slab); font-size:1.7rem; color:var(--ochre); min-width:2.4ch; text-align:right; }
+.chron .body h3{ font-family:var(--caps); font-weight:500; color:var(--sand-lit); margin:0 0 0.25rem; font-size:1.04rem; letter-spacing:0.03em; }
+.chron .body .dt{ font-family:var(--caps); font-size:0.6rem; letter-spacing:0.18em; text-transform:uppercase; color:var(--dust); }
+.chron .body p{ margin:0.35rem 0 0; color:var(--dust); font-size:0.92rem; }
+
+/* empty state — a section with nothing in it yet */
+.empty{
+  text-align:center; margin:2.4rem auto; max-width:52ch;
+  padding:2.4rem 1.6rem;
+  border:1px dashed var(--edge); border-radius:2px;
+  background:linear-gradient(180deg, rgba(57,44,34,0.26), rgba(20,15,12,0.38));
+}
+.empty .mark{ display:block; font-family:var(--slab); font-size:2.2rem; color:var(--stone-3); line-height:1; margin-bottom:0.8rem; }
+.empty h3{ font-family:var(--caps); font-weight:500; text-transform:uppercase; letter-spacing:0.18em; font-size:0.84rem; color:var(--ochre); margin:0 0 0.7rem; }
+.empty p{ font-family:var(--type); font-size:0.92rem; color:var(--dust); margin:0 auto; line-height:1.6; max-width:42ch; }
+.empty p + p{ margin-top:0.8rem; }
+
+/* prev/next */
+.pager{ display:flex; justify-content:space-between; gap:1rem; margin-top:3rem; padding-top:1.4rem; border-top:1px solid var(--edge-soft); }
+.pager a{ text-decoration:none; color:var(--essentia); max-width:46%; }
+.pager a:hover{ color:var(--essentia-lit); }
+.pager .dir{ font-family:var(--caps); text-transform:uppercase; letter-spacing:0.2em; font-size:0.58rem; color:var(--dust); display:block; }
+.pager .nx{ text-align:right; margin-left:auto; }
+
+/* breadcrumb */
+.crumb{ font-family:var(--caps); text-transform:uppercase; letter-spacing:0.18em; font-size:0.62rem; color:var(--dust); margin:1.6rem 0 0; }
+.crumb a{ color:var(--ochre); text-decoration:none; }
+.crumb .sep{ margin:0 0.6em; color:var(--dust-dim); }
+
+/* footer */
+.foot{
+  text-align:center; margin-top:4rem; padding:2rem 1rem; color:var(--dust-dim);
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.2em; font-size:0.58rem;
+  border-top:1px solid var(--edge-soft);
+}
+.foot .mark{ color:var(--rust); font-size:0.9rem; letter-spacing:0.4em; display:block; margin-bottom:0.6rem; }
+
+/* section intro text on index pages */
+.intro{ font-family:var(--type); color:var(--bone-2); font-size:1.02rem; line-height:1.6; max-width:62ch; }
+
+/* ------------------------------------------------------------ colossi / shard tally */
+.tally{ display:flex; flex-wrap:wrap; gap:0.55rem; margin:1.6rem 0 2rem; justify-content:center; }
+.tally .shard{
+  width:2.5rem; height:2.5rem; display:flex; align-items:center; justify-content:center;
+  font-family:var(--slab); font-size:0.92rem; color:var(--stone-3);
+  border:1px solid var(--edge); background:var(--stone);
+  transform:rotate(45deg);
+}
+.tally .shard span{ transform:rotate(-45deg); }
+.tally .shard.taken{ color:var(--night); background:var(--essentia); border-color:var(--essentia-lit); box-shadow:var(--glow); }
+.tally .shard.stirring{ color:var(--essentia-lit); border-color:var(--essentia-dim); }
+.tally-legend{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.16em; font-size:0.58rem;
+  color:var(--dust); text-align:center; margin:-0.9rem 0 2rem;
+}
+
+/* ------------------------------------------------------------ table / at-the-table pages */
+.principle{
+  border-left:3px solid var(--rust-soft); padding:0.1rem 0 0.1rem 1.2rem; margin:1.8rem 0;
+}
+.principle h3{ margin-top:0; color:var(--ochre); }
+
+/* ------------------------------------------------------------ GM / behind the veil */
+.topnav a.veil{ color:var(--blight); }
+.topnav a.veil::before{ content:"☩ "; }
+.topnav a.veil:hover{ color:#b9a3e2; }
+.topnav a.veil.active{ color:#c8b6ec; border-bottom-color:rgba(143,114,198,0.6); }
+
+.gm-mast h1{ color:#cbbbe8; text-shadow:0 3px 0 #0b0806, 0 0 28px rgba(143,114,198,0.3); }
+.gm-banner{
+  display:flex; gap:0.9rem; align-items:flex-start;
+  background:linear-gradient(180deg, rgba(70,52,104,0.24), rgba(28,22,36,0.36));
+  border:1px solid rgba(143,114,198,0.42); border-left:3px solid var(--blight);
+  border-radius:2px; padding:0.9rem 1.1rem; margin:0 0 1.6rem;
+  font-size:0.92rem; line-height:1.55; color:var(--bone-2);
+}
+.gm-banner .seal{ font-size:1.4rem; color:var(--blight); line-height:1; margin-top:0.1rem; }
+.gm-banner b{ color:#cbbbe8; }
+.gm-panel::after{ border-color:rgba(143,114,198,0.22); }
+.gm-panel h2{ color:#a58fd2; border-bottom-color:rgba(143,114,198,0.26); }
+.gm-panel h3{ color:#bca9e0; }
+.gm-panel a{ color:#b9a3e2; }
+.gm-panel li.todo{ list-style:none; margin-left:-1rem; color:var(--bone-2); }
+
+/* ------------------------------------------------------------ tables */
+.tablewrap{ overflow-x:auto; margin:1.4rem 0; border:1px solid var(--edge-soft); }
+.tablewrap table{ border-collapse:collapse; width:100%; font-size:0.84rem; }
+.tablewrap th{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.08em; font-size:0.6rem;
+  color:var(--ochre); background:rgba(211,148,64,0.07); padding:0.5rem 0.6rem; text-align:left;
+  border-bottom:1px solid var(--edge-soft); white-space:nowrap; position:sticky; top:0;
+}
+.tablewrap td{ padding:0.45rem 0.6rem; border-bottom:1px solid var(--edge-soft); color:var(--bone-2); }
+.tablewrap tr:hover td{ background:rgba(211,148,64,0.045); }
+
+/* epigraph — a line from the prophecy, set as a dispatch */
+.epigraph{
+  font-family:var(--type); color:var(--bone-2);
+  font-size:1.04rem; line-height:1.6; text-align:center;
+  max-width:56ch; margin:0.4rem auto 2rem; padding-bottom:1.4rem;
+  border-bottom:1px solid var(--edge-soft);
+}
+
+/* editorial footnote */
+.footnote{
+  font-family:var(--type); color:var(--dust);
+  font-size:0.82rem; line-height:1.6;
+  max-width:60ch; margin:2.2rem auto 0; padding-top:1rem;
+  border-top:1px solid var(--edge-soft);
+}
+
+/* provenance note — where a page's text came from */
+.source-note{
+  font-family:var(--caps); text-transform:uppercase; letter-spacing:0.14em;
+  font-size:0.56rem; color:var(--dust-dim); margin:1.8rem 0 0; padding-top:0.9rem;
+  border-top:1px solid var(--edge-soft);
+}
+
+@media print{ .topnav{ display:none } }
