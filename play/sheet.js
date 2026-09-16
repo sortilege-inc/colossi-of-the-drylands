@@ -15,6 +15,11 @@
      • armor[].equipped is honoured when no top-level armorName is given.
      • weaponEquipped() falls back to the SHEET default for a weapon with no
        saved key, so renaming or adding one does not orphan it.
+     • feature.damageRider {dice, appliesTo, label} — a feature that, while
+       switched on, adds a die to damage rolls with the weapons it covers
+       (appliesTo: "primary" | "all" | an exact weapon name). Toggling it on
+       pays the feature's costs; toggling it off is free. Earthkin Ignition
+       is the first of these.
    ============================================================ */
 (function () {
   "use strict";
@@ -69,6 +74,7 @@
       loc: {},                       // cardName -> "loadout" | "vault" (override)
       equip: initEquip(),            // { armor: name|null, weapons: {name:bool} }
       uses: {},                      // featureName -> marked uses
+      riders: {},                    // damageRider featureName -> lit?
       beastform: null,               // active Druid Beastform name | null
       gold: { coins: S.gold.coins, handfuls: S.gold.handfuls, bags: S.gold.bags, chests: S.gold.chests }
     };
@@ -80,6 +86,7 @@
     if (!st.cond) st.cond = { Hidden: false, Restrained: false, Vulnerable: false };
     if (!st.loc) st.loc = {};
     if (!st.uses) st.uses = {};
+    if (!st.riders) st.riders = {};
     if (!st.equip || !st.equip.weapons) st.equip = initEquip();
     if (!st.gold) st.gold = blankState().gold;
     return st;
@@ -120,6 +127,24 @@
     if (w.beast) return true;
     var m = state.equip.weapons;
     return Object.prototype.hasOwnProperty.call(m, w.name) ? !!m[w.name] : !!w.equipped;
+  }
+  /* Features that add a die to damage while switched on (e.g. Ignition). */
+  function riderFeatures() {
+    return (S.features || []).filter(function (f) { return f.damageRider; });
+  }
+  function riderCovers(f, w) {
+    var to = f.damageRider.appliesTo || "primary";
+    if (to === "all") return true;
+    if (to === "primary") return !w.secondary;
+    return to === w.name;
+  }
+  function ridersFor(w) {
+    return riderFeatures().filter(function (f) {
+      return state.riders[f.name] && riderCovers(f, w);
+    });
+  }
+  function riderSuffix(w) {
+    return ridersFor(w).map(function (f) { return " +1" + f.damageRider.dice; }).join("");
   }
   /* Number of damage dice: an explicit count wins, else Proficiency, else one. */
   function damageDiceCount(w) {
@@ -269,16 +294,28 @@
     var rolls = [], sum = 0;
     for (var i = 0; i < n; i++) { var r = d(sides); rolls.push(r); sum += r; }
     var critBonus = isCrit ? n * sides : 0;
-    var total = sum + critBonus + (w.bonus || 0);
     var dice = rolls.map(function (r) { return { sides: sides, value: r, shape: "square", tag: "adv" }; });
+    /* Rider dice (Ignition and the like) roll alongside, and max out on a crit
+       the same way the weapon's own dice do. */
+    var riders = ridersFor(w), riderNote = "";
+    riders.forEach(function (f) {
+      var rs = parseInt((f.damageRider.dice || "d6").replace("d", ""), 10) || 6;
+      var rr = d(rs);
+      sum += rr;
+      if (isCrit) critBonus += rs;
+      dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
+      riderNote += ' <span class="lg-eff">+1d' + rs + " " +
+        esc(f.damageRider.label || f.name) + "</span>";
+    });
+    var total = sum + critBonus + (w.bonus || 0);
     Dice.roll({
       mount: mount, dice: dice,
       onSettle: function () {
         logRoll('<span class="lg-label">' + esc(w.name) + " damage</span> " +
           '<b class="hope">' + total + "</b> " +
           '<span class="lg-bd">(' + n + "d" + sides + (w.bonus ? "+" + w.bonus : "") +
-          (isCrit ? " +" + (n * sides) + " crit" : "") + ")</span>" +
-          '<span class="lg-eff">' + esc((w.damageType || []).join("/")) + "</span>");
+          (isCrit ? " +" + critBonus + " crit" : "") + ")</span>" +
+          '<span class="lg-eff">' + esc((w.damageType || []).join("/")) + "</span>" + riderNote);
       }
     });
   }
@@ -342,7 +379,7 @@
   function weaponRow(w) {
     var equipped = weaponEquipped(w);
     var row = el("div", "weapon" + (equipped ? " is-eq" : "") + (w.beast ? " beast-wp" : ""));
-    var dmg = damageDiceCount(w) + w.dice + (w.bonus ? "+" + w.bonus : "");
+    var dmg = damageDiceCount(w) + w.dice + (w.bonus ? "+" + w.bonus : "") + riderSuffix(w);
     row.appendChild(el("div", "wp-name", esc(w.name) +
       '<span class="wp-meta">' + cap(w.trait || "—") + " · " + prettyRange(w.range) + " · " + dmg + " " +
       esc((w.damageType || []).join("/")) + (w.secondary ? " · secondary" : "") + "</span>"));
@@ -356,6 +393,32 @@
     var dm = el("button", "mini", "Damage"); dm.addEventListener("click", function () { damageRoll(w, false, rollMount); rollResult.textContent = ""; });
     var dmc = el("button", "mini ghost", "Crit"); dmc.addEventListener("click", function () { damageRoll(w, true, rollMount); rollResult.textContent = ""; });
     acts.appendChild(atk); acts.appendChild(dm); acts.appendChild(dmc);
+    riderFeatures().forEach(function (f) {
+      if (!riderCovers(f, w)) return;
+      var lit = !!state.riders[f.name];
+      var label = f.damageRider.label || f.name;
+      var b = el("button", "mini rider" + (lit ? " on" : ""), (lit ? "\u25c6 " : "") + label);
+      b.title = f.text || "";
+      b.addEventListener("click", function () {
+        if (lit) {
+          state.riders[f.name] = false; save();
+          logRoll('<span class="lg-label">' + esc(label) + '</span> <span class="lg-eff">\u2192 out</span>');
+        } else {
+          var costs = f.costs || [];
+          for (var i = 0; i < costs.length; i++) {
+            var c = costs[i];
+            if (c.key === "hope" && state.hope < c.value) { notify("Not enough Hope."); return; }
+            if (c.key === "stress" && state.stress + c.value > S.stressMax) { notify("Not enough Stress slots."); return; }
+          }
+          costs.forEach(function (c) { applyCost(c, label); });
+          state.riders[f.name] = true; save();
+          logRoll('<span class="lg-label">' + esc(label) + '</span> <span class="lg-eff">\u2192 ablaze, +1' +
+            esc(f.damageRider.dice) + ' damage until the scene ends</span>');
+        }
+        renderEquipment();
+      });
+      acts.appendChild(b);
+    });
     row.appendChild(acts);
     if (w.feature) row.appendChild(el("div", "wp-feat", esc(w.feature)));
     return row;
@@ -491,11 +554,12 @@
     var periods = kind === "long" ? ["short", "long", "rest", "session"] : ["short", "rest"];
     S.features.forEach(function (f) {
       if (f.uses && periods.indexOf(f.uses.period) !== -1) state.uses[f.name] = 0;
+      if (f.damageRider) state.riders[f.name] = false;   /* a rest ends the scene */
     });
     save();
     logRoll('<span class="lg-label">' + (kind === "long" ? "Long" : "Short") + " Rest complete</span>" +
       '<span class="lg-eff">→ ' + (kind === "long" ? "long-rest" : "short-rest") + " features reset · GM gains Fear</span>");
-    renderResources(); renderCards(); renderRest();
+    renderResources(); renderCards(); renderRest(); renderEquipment();
   }
 
   /* ---------- movable blocks: Hope tracker, Take-Damage ---------- */
@@ -883,7 +947,7 @@
   }
   function attackWith(w) {
     actionRoll(rollMods({ trait: tTrait(w.trait || "finesse"), traitName: cap(w.trait), label: w.name + " attack" }), rollMount);
-    rollResult.innerHTML = 'On a hit, roll <b>' + damageDiceCount(w) + w.dice + (w.bonus ? "+" + w.bonus : "") + "</b> damage.";
+    rollResult.innerHTML = 'On a hit, roll <b>' + damageDiceCount(w) + w.dice + (w.bonus ? "+" + w.bonus : "") + riderSuffix(w) + "</b> damage.";
   }
 
   /* advantage: 3-way toggle (Adv/Off/Dis) + a cyclable die size (d6 default) */

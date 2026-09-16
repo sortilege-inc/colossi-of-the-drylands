@@ -282,3 +282,12 @@
 .beast-active-name { font-family: var(--caps); letter-spacing: 0.04em; color: var(--moon-lit); font-size: 0.95rem; }
 .beast-active-stats { font-size: 0.82rem; color: var(--bone-2); margin: 0.3rem 0 0.5rem; }
 .weapon.beast-wp { border-left: 3px solid var(--moon); }
+
+/* ---- damage riders (Ignition): a weapon that is currently alight ------- */
+.wp-acts .mini.rider { border-color: var(--rust); color: var(--bone-2); }
+.wp-acts .mini.rider:hover { color: var(--sand-lit); }
+.wp-acts .mini.rider.on {
+  color: #1a0f0a; border-color: var(--sun);
+  background: linear-gradient(180deg, var(--sun), var(--rust));
+  box-shadow: 0 0 14px rgba(240,180,92,0.45);
+}
