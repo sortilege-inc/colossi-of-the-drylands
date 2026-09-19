@@ -23,6 +23,7 @@
        Switching it on pays its costs; switching it off is free. Earthkin
        Ignition (feature, d6, scene) and the Ember Pitch's Quick Shot
        (weapon, +4, once) are the two in play.
+     • rules() renders the markdown emphasis that verbatim corpus text carries.
    ============================================================ */
 (function () {
   "use strict";
@@ -40,6 +41,11 @@
     return e;
   }
   function esc(s) { return String(s == null ? "" : s).replace(/[&<>"]/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]; }); }
+  /* Rules text is sliced verbatim from the DSL corpus and keeps that source's
+     markdown emphasis; render it rather than printing the asterisks. */
+  function rules(s) {
+    return esc(s).replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\*([^*\n]+)\*/g, "<i>$1</i>");
+  }
   function clamp(n, lo, hi) { return Math.max(lo, Math.min(hi, n)); }
   function d(sides) { return 1 + Math.floor(Math.random() * sides); }
   function cap(s) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s; }
@@ -819,7 +825,7 @@
   function rollFeature(f) {
     var tr = f.rollTrait || (/spellcast/i.test(f.text) ? S.spellcastTrait : "");
     actionRoll(rollMods({ trait: tr ? tTrait(tr) : 0, traitName: cap(tr || ""), label: f.name }), rollMount);
-    rollResult.innerHTML = "<b>" + esc(f.name) + "</b> — " + esc(f.text);
+    rollResult.innerHTML = "<b>" + esc(f.name) + "</b> — " + rules(f.text);
   }
   function featureCard(f) {
     var card = el("div", "dcard feat");
@@ -839,7 +845,7 @@
       }
       card.appendChild(ctl);
     }
-    card.appendChild(el("div", "dc-text", esc(f.text)));
+    card.appendChild(el("div", "dc-text", rules(f.text)));
     return card;
   }
   function domainCard(c) {
@@ -857,12 +863,12 @@
         if (inLoad) { b.addEventListener("click", function () { castSpell(s, c); }); }
         else { b.disabled = true; b.className = "mini spell-btn disabled"; b.title = "In the Vault — recall this Book to prepare it"; }
         row.appendChild(b);
-        if (s.text) row.appendChild(el("div", "spell-text", esc(s.text)));
+        if (s.text) row.appendChild(el("div", "spell-text", rules(s.text)));
         sp.appendChild(row);
       });
       card.appendChild(sp);
     } else {
-      card.appendChild(el("div", "dc-text", esc(c.text)));
+      card.appendChild(el("div", "dc-text", rules(c.text)));
     }
     var act = el("div", "dc-act");
     if (inLoad) {
@@ -904,7 +910,7 @@
       card.appendChild(el("div", "beast-stats",
         "Evasion +" + f.evasionBonus + (f.traitBonus ? " · " + f.traitBonus.trait + " +" + f.traitBonus.bonus : "") +
         (f.attack ? " · " + f.attack.range + " " + f.attack.damage : "")));
-      f.features.forEach(function (ft) { card.appendChild(el("div", "beast-feat", "<b>" + esc(ft.name) + "</b> " + esc(ft.text))); });
+      f.features.forEach(function (ft) { card.appendChild(el("div", "beast-feat", "<b>" + esc(ft.name) + "</b> " + rules(ft.text))); });
       var btn = el("button", "mini" + (active ? " eq-toggle on" : ""), active ? "Deactivate" : "Activate");
       btn.addEventListener("click", function () { setBeastform(active ? null : f.name); });
       card.appendChild(btn);
@@ -968,7 +974,7 @@
   function castSpell(spell, card) {
     var tr = S.spellcastTrait || "knowledge";
     actionRoll(rollMods({ trait: tTrait(tr), traitName: cap(tr), label: card.name + " · " + spell.name }), rollMount);
-    rollResult.innerHTML = "<b>" + esc(spell.name) + "</b> — Spellcast (" + cap(tr) + "). " + esc(spell.text);
+    rollResult.innerHTML = "<b>" + esc(spell.name) + "</b> — Spellcast (" + cap(tr) + "). " + rules(spell.text);
   }
   function attackWith(w) {
     actionRoll(rollMods({ trait: tTrait(w.trait || "finesse"), traitName: cap(w.trait), label: w.name + " attack" }), rollMount);
