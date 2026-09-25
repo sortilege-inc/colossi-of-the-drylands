@@ -24,6 +24,8 @@
        Ignition (feature, d6, scene) and the Ember Pitch's Quick Shot
        (weapon, +4, once) are the two in play.
      • rules() renders the markdown emphasis that verbatim corpus text carries.
+     • armorRow() prints the derived Score and thresholds, not the raw card
+       numbers, so the row cannot disagree with the header.
    ============================================================ */
 (function () {
   "use strict";
@@ -456,10 +458,15 @@
   }
   function armorRow(a) {
     var eqd = state.equip.armor === a.name;
+    /* Show what this armor actually yields, the same way derivedStats works:
+       a trait-scaled Score and the permanent bonuses. Printing the raw card
+       numbers made the row disagree with the header. */
+    var bon = S.bonuses || {}, tb = bon.thresholds || 0, sb = bon.armorScore || 0;
     var row = el("div", "armor-row" + (eqd ? " is-eq" : ""));
     row.appendChild(el("div", "wp-name", esc(a.name) +
-      '<span class="wp-meta">Thresholds ' + (a.major + S.level) + "/" + (a.severe + S.level) +
-      " · Score " + a.score + (a.evasionBonus ? " · Evasion " + fmt(a.evasionBonus) : "") + "</span>"));
+      '<span class="wp-meta">Thresholds ' + (a.major + S.level + tb) + "/" + (a.severe + S.level + tb) +
+      " · Score " + (a.score + (a.scoreTrait ? (S.traits[a.scoreTrait] || 0) : 0) + sb) +
+      (a.evasionBonus ? " · Evasion " + fmt(a.evasionBonus) : "") + "</span>"));
     var eq = el("button", "mini eq-toggle" + (eqd ? " on" : ""), eqd ? "Equipped" : "Equip");
     eq.addEventListener("click", function () { state.equip.armor = eqd ? null : a.name; save(); refreshDerived(); renderEquipment(); });
     row.appendChild(eq);
