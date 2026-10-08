@@ -485,3 +485,49 @@ article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(
 }
 
 @media print{ .topnav{ display:none } }
+
+/* ------------------------------------------------------------ atlas map
+   The frame's own map, printed black on white, aged toward a sun-yellowed
+   broadside. Its printed place names are the links; the GM's orange mark is
+   the colossus, ringed in cold essentia light. */
+.atlas-map{ margin:1.4rem auto 2.4rem; max-width:1100px; }
+.am-frame{
+  position:relative; line-height:0;
+  padding:10px; background:var(--stone-2);
+  border:1px solid var(--edge); box-shadow:var(--shadow-deep);
+}
+.am-frame::after{ content:""; position:absolute; inset:5px; border:1px solid var(--edge-soft); pointer-events:none; }
+.am-frame img{
+  display:block; width:100%; height:auto;
+  filter:sepia(0.42) saturate(1.15) contrast(1.04) brightness(0.9);
+}
+.am-spot{
+  position:absolute; display:block; border-radius:2px;
+  outline:1px solid transparent; transition:background .15s, outline-color .15s, box-shadow .15s;
+}
+.am-canvas{ position:relative; } /* spots are placed as % of the image, not the frame */
+.am-spot:hover, .am-spot:focus-visible{
+  background:rgba(211,148,64,0.22); outline-color:var(--ochre);
+  box-shadow:0 0 14px rgba(240,180,92,0.35);
+}
+.am-tip{
+  position:absolute; left:50%; bottom:calc(100% + 6px); transform:translateX(-50%);
+  white-space:nowrap; pointer-events:none; opacity:0; transition:opacity .15s;
+  font-family:var(--caps); font-size:0.66rem; letter-spacing:0.14em; text-transform:uppercase;
+  line-height:1; color:var(--sand-lit); background:var(--night);
+  border:1px solid var(--ochre-soft); padding:0.36rem 0.55rem; border-radius:2px;
+}
+.am-spot:hover .am-tip, .am-spot:focus-visible .am-tip{ opacity:1; }
+.am-spot.am-colossus{ border-radius:50%; }
+.am-spot.am-colossus::before{
+  content:""; position:absolute; inset:-5px; border-radius:50%;
+  border:2px solid var(--essentia); box-shadow:var(--glow);
+  animation:am-pulse 2.4s ease-in-out infinite;
+}
+.am-spot.am-colossus:hover{ background:rgba(94,214,198,0.18); outline-color:transparent; }
+@keyframes am-pulse{ 0%,100%{ opacity:0.9; transform:scale(1); } 50%{ opacity:0.35; transform:scale(1.18); } }
+@media (prefers-reduced-motion: reduce){ .am-spot.am-colossus::before{ animation:none; } }
+.atlas-map figcaption{
+  font-family:var(--type); font-size:0.86rem; color:var(--dust);
+  text-align:center; margin-top:0.8rem; line-height:1.5;
+}
