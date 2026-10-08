@@ -26,6 +26,11 @@
      • rules() renders the markdown emphasis that verbatim corpus text carries.
      • armorRow() prints the derived Score and thresholds, not the raw card
        numbers, so the row cannot disagree with the header.
+     • feature.tracker {die, dieAtLevel, addsToDamage} — a value that moves
+       during a scene (the Guardian's Unstoppable Die).
+     • card.costs — domain cards render cost buttons the way features do.
+     • damageRoll() logs one line per source, each with its own dice and its
+       own damage type, since a rider's type need not be the weapon's.
    ============================================================ */
 (function () {
   "use strict";
@@ -86,6 +91,7 @@
       equip: initEquip(),            // { armor: name|null, weapons: {name:bool} }
       uses: {},                      // featureName -> marked uses
       riders: {},                    // damageRider featureName -> lit?
+      trackers: {},                  // tracker featureName -> {on, value}
       beastform: null,               // active Druid Beastform name | null
       gold: { coins: S.gold.coins, handfuls: S.gold.handfuls, bags: S.gold.bags, chests: S.gold.chests }
     };
@@ -98,6 +104,7 @@
     if (!st.loc) st.loc = {};
     if (!st.uses) st.uses = {};
     if (!st.riders) st.riders = {};
+    if (!st.trackers) st.trackers = {};
     if (!st.equip || !st.equip.weapons) st.equip = initEquip();
     if (!st.gold) st.gold = blankState().gold;
     return st;
@@ -173,6 +180,28 @@
   }
   function riderSuffix(w) {
     return ridersFor(w).map(function (r) { return " " + riderAmount(r); }).join("");
+  }
+  /* Trackers: a feature carrying a value that moves during a scene — the
+     Guardian's Unstoppable Die. The sheet cannot know whether an attack dealt
+     a Hit Point, so the die is ratcheted by hand; the die size by level, the
+     ceiling, dropping out, and the damage it adds are all automatic. */
+  function trackerFeatures() {
+    return (S.features || []).filter(function (f) { return f.tracker; });
+  }
+  function trackerState(f) {
+    if (!state.trackers[f.name]) state.trackers[f.name] = { on: false, value: 1 };
+    return state.trackers[f.name];
+  }
+  function trackerDie(f) {
+    var die = f.tracker.die || "d4", at = f.tracker.dieAtLevel || {};
+    Object.keys(at).forEach(function (lv) { if (S.level >= +lv) die = at[lv]; });
+    return die;
+  }
+  function trackerMax(f) { return parseInt(trackerDie(f).replace("d", ""), 10) || 4; }
+  function activeTrackers() {
+    return trackerFeatures().filter(function (f) {
+      return trackerState(f).on && f.tracker.addsToDamage;
+    });
   }
   /* Number of damage dice: an explicit count wins, else Proficiency, else one. */
   function damageDiceCount(w) {
@@ -319,35 +348,54 @@
   function damageRoll(w, isCrit, mount) {
     var sides = parseInt((w.dice || "d6").replace("d", ""), 10) || 6;
     var n = damageDiceCount(w);
-    var rolls = [], sum = 0;
+    var wType = (w.damageType || []).join("/");
+    /* One part per source of damage, each with its own dice and its own damage
+       type — Ignition's die is magic whether or not the weapon is. */
+    var parts = [], dice = [], total = 0, rolls = [], sum = 0;
     for (var i = 0; i < n; i++) { var r = d(sides); rolls.push(r); sum += r; }
-    var critBonus = isCrit ? n * sides : 0;
-    var dice = rolls.map(function (r) { return { sides: sides, value: r, shape: "square", tag: "adv" }; });
-    /* Rider dice (Ignition and the like) roll alongside, and max out on a crit
-       the same way the weapon's own dice do. */
-    var riders = ridersFor(w), riderNote = "", spent = false;
+    rolls.forEach(function (r) { dice.push({ sides: sides, value: r, shape: "square", tag: "adv" }); });
+    var wCrit = isCrit ? n * sides : 0, flat = w.bonus || 0, flatNote = [];
+    var riders = ridersFor(w), spent = false;
+    riders.forEach(function (r) {
+      if (!r.spec.dice && r.spec.bonus) { flat += r.spec.bonus; flatNote.push(r.label); }
+    });
+    parts.push({ label: w.name, formula: n + "d" + sides + (flat ? "+" + flat : ""),
+                 rolls: rolls, flat: flat, crit: wCrit, type: wType, note: flatNote.join(", ") });
+    total += sum + flat + wCrit;
     riders.forEach(function (r) {
       if (r.spec.dice) {
         var rs = parseInt(r.spec.dice.replace("d", ""), 10) || 6;
-        var rr = d(rs);
-        sum += rr;
-        if (isCrit) critBonus += rs;
+        var rr = d(rs), rc = isCrit ? rs : 0;
         dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
+        parts.push({ label: r.label, formula: "1" + r.spec.dice, rolls: [rr], flat: 0,
+                     crit: rc, type: (r.spec.damageType || []).join("/") || wType, note: "" });
+        total += rr + rc;
       }
-      if (r.spec.bonus) sum += r.spec.bonus;
-      riderNote += ' <span class="lg-eff">' + riderAmount(r) + " " + esc(r.label) + "</span>";
       if (r.spec.duration === "once") { state.riders[r.id] = false; spent = true; }
     });
+    activeTrackers().forEach(function (f) {
+      var t = trackerState(f);
+      parts.push({ label: f.name + " die", formula: trackerDie(f) + " showing " + t.value,
+                   rolls: [], flat: t.value, crit: 0, type: wType, note: "" });
+      total += t.value;
+    });
     if (spent) { save(); setTimeout(renderEquipment, 0); }
-    var total = sum + critBonus + (w.bonus || 0);
     Dice.roll({
       mount: mount, dice: dice,
       onSettle: function () {
+        var body = parts.map(function (p) {
+          var bits = p.rolls.length ? p.rolls.join(" + ") : "";
+          if (p.flat) bits += (bits ? " + " : "") + p.flat;
+          if (p.crit) bits += (bits ? " + " : "") + p.crit + " crit";
+          var sub = p.rolls.reduce(function (a, b) { return a + b; }, 0) + p.flat + p.crit;
+          return '<span class="lg-part"><span class="lg-pl">' + esc(p.label) + "</span> " +
+                 '<span class="lg-bd">' + esc(p.formula) + (p.note ? " incl. " + esc(p.note) : "") +
+                 "</span> " + esc(bits) + " = <b>" + sub + "</b>" +
+                 (p.type ? ' <span class="lg-ty">' + esc(p.type) + "</span>" : "") + "</span>";
+        }).join("");
         logRoll('<span class="lg-label">' + esc(w.name) + " damage</span> " +
-          '<b class="hope">' + total + "</b> " +
-          '<span class="lg-bd">(' + n + "d" + sides + (w.bonus ? "+" + w.bonus : "") +
-          (isCrit ? " +" + critBonus + " crit" : "") + ")</span>" +
-          '<span class="lg-eff">' + esc((w.damageType || []).join("/")) + "</span>" + riderNote);
+                '<b class="hope">' + total + "</b>" +
+                (isCrit ? ' <span class="lg-bd">critical</span>' : "") + body);
       }
     });
   }
@@ -798,6 +846,51 @@
 
   /* ---------- abilities & cards: Passive | Features | Loadout | Vault ---------- */
   var cardsHeader, cardsBody;
+  function trackerWidget(f) {
+    var t = trackerState(f), die = trackerDie(f), max = trackerMax(f);
+    var wrap = el("div", "tracker" + (t.on ? " on" : ""));
+    var toggle = el("button", "mini rider" + (t.on ? " on" : ""),
+                    (t.on ? "\u25c6 " : "") + f.name + " " + die);
+    toggle.addEventListener("click", function () {
+      if (t.on) {
+        t.on = false; save(); renderCards(); renderEquipment();
+        logRoll('<span class="lg-label">' + esc(f.name) + '</span> <span class="lg-eff">\u2192 out</span>');
+        return;
+      }
+      if (f.uses) {
+        var used = state.uses[f.name] || 0;
+        if (used >= f.uses.n) { notify(f.name + " is spent until your next rest."); return; }
+        state.uses[f.name] = used + 1;
+      }
+      t.on = true; t.value = 1; save(); renderCards(); renderEquipment();
+      logRoll('<span class="lg-label">' + esc(f.name) + '</span> <span class="lg-eff">\u2192 ' +
+              esc(die) + ', showing 1</span>');
+    });
+    wrap.appendChild(toggle);
+    if (t.on) {
+      var dec = el("button", "mini ghost", "\u2212");
+      dec.addEventListener("click", function () {
+        t.value = clamp(t.value - 1, 1, max); save(); renderCards(); renderEquipment();
+      });
+      wrap.appendChild(dec);
+      wrap.appendChild(el("span", "tr-val", String(t.value) + " / " + max));
+      /* "When the die's value would exceed its maximum value … remove the die
+         and drop out." A +1 past the top ends it rather than capping. */
+      var inc = el("button", "mini", "+1");
+      inc.addEventListener("click", function () {
+        if (t.value >= max) {
+          t.on = false; save(); renderCards(); renderEquipment();
+          logRoll('<span class="lg-label">' + esc(f.name) + '</span> <span class="lg-eff">\u2192 past ' +
+                  max + ', die removed</span>');
+          return;
+        }
+        t.value += 1; save(); renderCards(); renderEquipment();
+      });
+      wrap.appendChild(inc);
+      if (f.tracker.addsToDamage) wrap.appendChild(el("span", "tr-note", "adds to damage rolls"));
+    }
+    return wrap;
+  }
   function usesWidget(f) {
     var wrap = el("div", "uses");
     var per = { short: "short rest", long: "long rest", rest: "rest", session: "session" }[f.uses.period] || f.uses.period;
@@ -838,6 +931,7 @@
     var card = el("div", "dcard feat");
     card.appendChild(el("div", "dc-head", '<span class="dc-name">' + esc(f.name) + "</span>"));
     if (f.uses) card.appendChild(usesWidget(f));
+    if (f.tracker) card.appendChild(trackerWidget(f));
     if ((f.costs && f.costs.length) || f.hasRoll) {
       var ctl = el("div", "feat-ctl");
       (f.costs || []).forEach(function (c) {
@@ -876,6 +970,16 @@
       card.appendChild(sp);
     } else {
       card.appendChild(el("div", "dc-text", rules(c.text)));
+    }
+    if (inLoad && c.costs && c.costs.length) {
+      var cctl = el("div", "feat-ctl");
+      c.costs.forEach(function (cost) {
+        var b = el("button", "mini feat-cost-btn",
+                   (cost.key === "hope" ? "Spend " : "Mark ") + cost.value + " " + costLabel(cost.key));
+        b.addEventListener("click", function () { applyCost(cost, c.name); });
+        cctl.appendChild(b);
+      });
+      card.appendChild(cctl);
     }
     var act = el("div", "dc-act");
     if (inLoad) {

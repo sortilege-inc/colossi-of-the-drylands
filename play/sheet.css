@@ -291,3 +291,29 @@
   background: linear-gradient(180deg, var(--sun), var(--rust));
   box-shadow: 0 0 14px rgba(240,180,92,0.45);
 }
+
+/* ---- trackers (the Unstoppable Die) ----------------------------------- */
+.tracker { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; margin: 0.1rem 0 0.5rem; }
+.tracker .tr-val {
+  font-family: var(--caps); font-size: 0.82rem; letter-spacing: 0.08em;
+  color: var(--sand-lit); min-width: 3.4rem; text-align: center;
+}
+.tracker.on .tr-val { color: var(--sun); }
+.tracker .tr-note {
+  font-family: var(--serif); font-style: italic; font-size: 0.72rem; color: var(--dust);
+}
+
+/* ---- damage breakdown: one line per source --------------------------- */
+.lg-part {
+  display: block; font-size: 0.74rem; color: var(--bone-2);
+  padding-left: 0.7rem; border-left: 1px solid var(--edge-soft); margin-top: 0.22rem;
+}
+.lg-part .lg-pl {
+  font-family: var(--caps); font-size: 0.62rem; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--ash);
+}
+.lg-part b { font-family: var(--caps); font-size: 0.86rem; color: var(--sand-lit); }
+.lg-ty {
+  font-family: var(--caps); font-size: 0.56rem; letter-spacing: 0.12em;
+  text-transform: uppercase; color: var(--moon); margin-left: 0.25rem;
+}
