@@ -15,7 +15,8 @@
      • armor[].equipped is honoured when no top-level armorName is given.
      • weaponEquipped() falls back to the SHEET default for a weapon with no
        saved key, so renaming or adding one does not orphan it.
-     • damageRider {dice?, bonus?, appliesTo, label, duration, costs?} on a
+     • damageRider {dice?, diceCount?, diceCountTier?, bonus?, appliesTo,
+       label, duration, costs?} on a
        feature OR on a weapon — while switched on it adds a die and/or a flat
        bonus to damage rolls with the weapons it covers (appliesTo: "primary"
        | "all" | an exact weapon name). duration "scene" stays lit until a
@@ -177,8 +178,15 @@
   function ridersFor(w) {
     return allRiders().filter(function (r) { return state.riders[r.id] && riderCovers(r, w); });
   }
+  /* How many dice a rider rolls: a flat diceCount, or the character's tier
+     when diceCountTier is set — Sneak Attack is "a number of d6s equal to
+     your tier". */
+  function riderDiceCount(r) {
+    if (r.spec.diceCountTier) return tier();
+    return r.spec.diceCount || 1;
+  }
   function riderAmount(r) {
-    return (r.spec.dice ? "+1" + r.spec.dice : "") +
+    return (r.spec.dice ? "+" + riderDiceCount(r) + r.spec.dice : "") +
            (r.spec.bonus ? (r.spec.dice ? " " : "") + "+" + r.spec.bonus : "");
   }
   function riderSuffix(w) {
@@ -392,11 +400,15 @@
     riders.forEach(function (r) {
       if (r.spec.dice) {
         var rs = parseInt(r.spec.dice.replace("d", ""), 10) || 6;
-        var rr = d(rs), rc = isCrit ? rs : 0;
-        dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
-        parts.push({ label: r.label, formula: "1" + r.spec.dice, rolls: [rr], flat: 0,
+        var rn = riderDiceCount(r), rrs = [], rsum = 0;
+        for (var k = 0; k < rn; k++) {
+          var rr = d(rs); rrs.push(rr); rsum += rr;
+          dice.push({ sides: rs, value: rr, shape: "square", tag: "adv" });
+        }
+        var rc = isCrit ? rn * rs : 0;
+        parts.push({ label: r.label, formula: rn + r.spec.dice, rolls: rrs, flat: 0,
                      crit: rc, type: (r.spec.damageType || []).join("/") || wType, note: "" });
-        total += rr + rc;
+        total += rsum + rc;
       }
       if (r.spec.duration === "once") { state.riders[r.id] = false; spent = true; }
     });
