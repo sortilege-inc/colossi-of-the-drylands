@@ -18,7 +18,7 @@ from below by something cold.
 | `relics/` | Essentia, cells, a soul shard, a stone sickle |
 | `lore/` | The prophecy, the war that buried the gods, essentia, the Rush |
 | `table/` | Player-facing: principles, Session 0 questions, communities/ancestries/classes, steeds |
-| `gm/` | **Behind the Veil** — campaign state, next-session prep, the nine-shard tally |
+| `ledger/` | **The Ledger** — where things stand, what is open for the next session, the nine-shard tally |
 | `drylands.css` | The theme |
 
 **The shard tally is the spine.** `shards.reached` / `shards.total` in
