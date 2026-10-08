@@ -26,8 +26,11 @@
      • rules() renders the markdown emphasis that verbatim corpus text carries.
      • armorRow() prints the derived Score and thresholds, not the raw card
        numbers, so the row cannot disagree with the header.
-     • feature.tracker {die, dieAtLevel, addsToDamage} — a value that moves
-       during a scene (the Guardian's Unstoppable Die).
+     • feature.tracker, in three kinds. "ratchet" is a value that moves during
+       a scene (the Guardian's Unstoppable Die). "pool" rolls and spends a set
+       of dice (the Seraph's Prayer Dice, counted off a trait). "stance" is a
+       held effect bought with Hope or Stress that grants Evasion and ends at a
+       rest (the Rogue's Dodge).
      • card.costs — domain cards render cost buttons the way features do.
      • damageRoll() logs one line per source, each with its own dice and its
        own damage type, since a rider's type need not be the weapon's.
@@ -132,7 +135,7 @@
     /* Armor Score may be a flat number or "n + a trait" (Bare Bones). */
     var score = a ? (a.score + (a.scoreTrait ? (S.traits[a.scoreTrait] || 0) : 0)) : 0;
     return {
-      evasion: S.evasionBase + (a ? a.evasionBonus : 0) + (bf ? bf.evasionBonus : 0),
+      evasion: S.evasionBase + (a ? a.evasionBonus : 0) + (bf ? bf.evasionBonus : 0) + stanceEvasion(),
       armorScore: score + (bon.armorScore || 0),
       thresholds: a ? { major: a.major + S.level + tb, severe: a.severe + S.level + tb }
                     : { major: S.level + tb, severe: S.level + tb }
@@ -189,8 +192,32 @@
     return (S.features || []).filter(function (f) { return f.tracker; });
   }
   function trackerState(f) {
-    if (!state.trackers[f.name]) state.trackers[f.name] = { on: false, value: 1 };
+    if (!state.trackers[f.name]) {
+      var k = f.tracker.kind || "ratchet";
+      state.trackers[f.name] = k === "pool" ? { dice: [] } : { on: false, value: 1 };
+    }
     return state.trackers[f.name];
+  }
+  function trackerKind(f) { return f.tracker.kind || "ratchet"; }
+  function tier() {
+    var l = S.level || 1;
+    return l >= 8 ? 4 : l >= 5 ? 3 : l >= 2 ? 2 : 1;
+  }
+  /* How many dice a pool rolls: a flat count, or a trait — the Seraph's Prayer
+     Dice are "a number of d4s equal to your subclass's Spellcast trait". */
+  function poolCount(f) {
+    var t = f.tracker.countTrait;
+    if (t === "spellcast") t = S.spellcastTrait;
+    if (t) return Math.max(0, S.traits[t] || 0);
+    return f.tracker.count || 0;
+  }
+  /* Evasion granted by any stance currently held (Rogue's Dodge). */
+  function stanceEvasion() {
+    var n = 0;
+    trackerFeatures().forEach(function (f) {
+      if (trackerKind(f) === "stance" && trackerState(f).on) n += f.tracker.evasion || 0;
+    });
+    return n;
   }
   function trackerDie(f) {
     var die = f.tracker.die || "d4", at = f.tracker.dieAtLevel || {};
@@ -200,7 +227,7 @@
   function trackerMax(f) { return parseInt(trackerDie(f).replace("d", ""), 10) || 4; }
   function activeTrackers() {
     return trackerFeatures().filter(function (f) {
-      return trackerState(f).on && f.tracker.addsToDamage;
+      return trackerKind(f) === "ratchet" && trackerState(f).on && f.tracker.addsToDamage;
     });
   }
   /* Number of damage dice: an explicit count wins, else Proficiency, else one. */
@@ -642,10 +669,13 @@
       if (f.uses && periods.indexOf(f.uses.period) !== -1) state.uses[f.name] = 0;
     });
     allRiders().forEach(function (r) { state.riders[r.id] = false; });  /* a rest ends the scene */
+    trackerFeatures().forEach(function (f) {      /* and ends any stance held */
+      if (trackerKind(f) === "stance") trackerState(f).on = false;
+    });
     save();
     logRoll('<span class="lg-label">' + (kind === "long" ? "Long" : "Short") + " Rest complete</span>" +
       '<span class="lg-eff">→ ' + (kind === "long" ? "long-rest" : "short-rest") + " features reset · GM gains Fear</span>");
-    renderResources(); renderCards(); renderRest(); renderEquipment();
+    refreshDerived(); renderResources(); renderCards(); renderRest(); renderEquipment();
   }
 
   /* ---------- movable blocks: Hope tracker, Take-Damage ---------- */
@@ -846,7 +876,68 @@
 
   /* ---------- abilities & cards: Passive | Features | Loadout | Vault ---------- */
   var cardsHeader, cardsBody;
+  function poolWidget(f) {
+    var t = trackerState(f), die = f.tracker.die || "d4", n = poolCount(f);
+    var wrap = el("div", "tracker pool");
+    var roll = el("button", "mini", t.dice.length ? "Re-roll " + n + die : "Roll " + n + die);
+    roll.addEventListener("click", function () {
+      var sides = parseInt(die.replace("d", ""), 10) || 4, out = [];
+      for (var i = 0; i < n; i++) out.push({ v: d(sides), spent: false });
+      t.dice = out; save(); renderCards();
+      logRoll('<span class="lg-label">' + esc(f.name) + "</span> " +
+              '<span class="lg-eff">\u2192 ' + out.map(function (x) { return x.v; }).join(", ") + "</span>");
+    });
+    wrap.appendChild(roll);
+    t.dice.forEach(function (x, i) {
+      var b = el("button", "mini pdie" + (x.spent ? " spent" : ""), String(x.v));
+      b.title = x.spent ? "Spent" : "Spend this die";
+      b.addEventListener("click", function () {
+        x.spent = !x.spent; save(); renderCards();
+        if (x.spent) logRoll('<span class="lg-label">' + esc(f.name) + "</span> " +
+          '<span class="lg-eff">\u2192 spent a die showing ' + x.v + "</span>");
+      });
+      wrap.appendChild(b);
+    });
+    if (t.dice.length) {
+      var cl = el("button", "mini ghost", "Clear");
+      cl.addEventListener("click", function () { t.dice = []; save(); renderCards(); });
+      wrap.appendChild(cl);
+      var left = t.dice.filter(function (x) { return !x.spent; }).length;
+      wrap.appendChild(el("span", "tr-note", left + " unspent"));
+    } else if (n === 0) {
+      wrap.appendChild(el("span", "tr-note", "no Spellcast trait set"));
+    }
+    return wrap;
+  }
+  function stanceWidget(f) {
+    var t = trackerState(f), wrap = el("div", "tracker" + (t.on ? " on" : ""));
+    var label = f.name + (f.tracker.evasion ? " +" + f.tracker.evasion + " Evasion" : "");
+    var b = el("button", "mini rider" + (t.on ? " on" : ""), (t.on ? "\u25c6 " : "") + label);
+    b.addEventListener("click", function () {
+      if (t.on) {
+        t.on = false; save(); renderCards(); refreshDerived(); renderResources();
+        logRoll('<span class="lg-label">' + esc(f.name) + '</span> <span class="lg-eff">\u2192 ended</span>');
+        return;
+      }
+      var costs = f.tracker.costs || f.costs || [];
+      for (var i = 0; i < costs.length; i++) {
+        var c = costs[i];
+        if (c.key === "hope" && state.hope < c.value) { notify("Not enough Hope."); return; }
+        if (c.key === "stress" && state.stress + c.value > S.stressMax) { notify("Not enough Stress slots."); return; }
+      }
+      costs.forEach(function (c) { applyCost(c, f.name); });
+      t.on = true; save(); renderCards(); refreshDerived(); renderResources();
+      logRoll('<span class="lg-label">' + esc(f.name) + '</span> <span class="lg-eff">\u2192 +' +
+              (f.tracker.evasion || 0) + " Evasion until an attack succeeds against you, or your next rest</span>");
+    });
+    wrap.appendChild(b);
+    if (t.on) wrap.appendChild(el("span", "tr-note", "drop it when an attack succeeds against you"));
+    return wrap;
+  }
   function trackerWidget(f) {
+    var k = trackerKind(f);
+    if (k === "pool") return poolWidget(f);
+    if (k === "stance") return stanceWidget(f);
     var t = trackerState(f), die = trackerDie(f), max = trackerMax(f);
     var wrap = el("div", "tracker" + (t.on ? " on" : ""));
     var toggle = el("button", "mini rider" + (t.on ? " on" : ""),

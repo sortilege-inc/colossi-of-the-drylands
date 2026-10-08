@@ -317,3 +317,14 @@
   font-family: var(--caps); font-size: 0.56rem; letter-spacing: 0.12em;
   text-transform: uppercase; color: var(--moon); margin-left: 0.25rem;
 }
+
+/* ---- dice pools (Prayer Dice) ----------------------------------------- */
+.tracker .pdie {
+  min-width: 2rem; font-family: var(--slab); font-size: 0.86rem;
+  color: var(--sand-lit); border-color: var(--ochre-soft);
+  background: linear-gradient(180deg, rgba(211,148,64,0.18), rgba(211,148,64,0.06));
+}
+.tracker .pdie.spent {
+  color: var(--dust-dim); border-color: var(--edge);
+  background: transparent; text-decoration: line-through;
+}
