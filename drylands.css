@@ -266,6 +266,46 @@ article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(
 }
 .meta .sep{ color:var(--dust-dim); margin:0 0.6em; }
 .tagrow{ display:flex; flex-wrap:wrap; gap:0.4rem; margin:0.4rem 0 1.4rem; }
+
+/* chips on the left, the play-sheet button on the right, one row above the panel */
+.page-bar{
+  display:flex; align-items:center; justify-content:space-between; gap:0.8rem 1rem;
+  flex-wrap:wrap; margin:0.2rem 0 1.2rem;
+}
+.page-bar .tagrow{ margin:0; }
+.page-bar .play-btn{ margin-left:auto; }
+
+/* ------------------------------------------------------------ play-sheet button
+   A printed ticket: double rule, wood-type star, wanted-poster caps. Warms to
+   the same sun-to-rust as a lit Ignition on hover. */
+.play-btn{
+  position:relative; display:inline-flex; align-items:center; gap:0.65rem;
+  padding:0.62rem 1.05rem 0.62rem 0.9rem;
+  font-family:var(--caps); font-weight:500; font-size:0.74rem;
+  letter-spacing:0.2em; text-transform:uppercase; text-decoration:none;
+  color:var(--sand-lit);
+  background:linear-gradient(180deg, rgba(57,44,34,0.95), rgba(24,18,15,0.95));
+  border:1px solid var(--ochre-soft); border-radius:2px;
+  box-shadow:0 6px 18px rgba(0,0,0,0.45), inset 0 1px 0 rgba(255,255,255,0.05);
+  transition:color .18s, border-color .18s, box-shadow .18s, background .18s, transform .18s;
+}
+.play-btn::after{ /* inner hairline, matching the panels */
+  content:""; position:absolute; inset:3px; border:1px solid rgba(211,148,64,0.18);
+  border-radius:1px; pointer-events:none; transition:border-color .18s;
+}
+.play-btn .pb-ico{ font-family:var(--slab); font-size:0.95rem; color:var(--ochre); line-height:1; transition:color .18s; }
+.play-btn .pb-arr{ font-family:var(--serif); font-size:1.15rem; line-height:1; color:var(--ochre-soft); margin-left:0.1rem; transition:transform .18s, color .18s; }
+.play-btn:hover{
+  color:#1a0f0a; border-color:var(--sun);
+  background:linear-gradient(180deg, var(--sun), var(--rust));
+  box-shadow:0 8px 24px rgba(0,0,0,0.5), 0 0 22px rgba(240,180,92,0.35);
+  transform:translateY(-1px);
+}
+.play-btn:hover::after{ border-color:rgba(26,15,10,0.25); }
+.play-btn:hover .pb-ico, .play-btn:hover .pb-arr{ color:#1a0f0a; }
+.play-btn:hover .pb-arr{ transform:translateX(3px); }
+.play-btn:focus-visible{ outline:1px dotted var(--sun); outline-offset:3px; }
+@media (max-width:560px){ .page-bar .play-btn{ margin-left:0; width:100%; justify-content:center; } }
 .chip{
   font-family:var(--caps); font-size:0.6rem; letter-spacing:0.12em; text-transform:uppercase;
   color:var(--bone-2); background:rgba(211,148,64,0.09);
@@ -306,7 +346,7 @@ article code.tag-yours, article code.tag-mine{ color:#c3aee8; border-color:rgba(
   box-shadow:var(--shadow-deep); transition:.2s;
 }
 .pcard:hover .frame{ border-color:var(--ochre); }
-.pcard .frame img{ width:100%; height:100%; object-fit:cover; filter:contrast(1.04) brightness(0.97); }
+.pcard .frame img{ width:100%; height:100%; object-fit:cover; object-position:50% 6%; filter:contrast(1.04) brightness(0.97); }
 .pcard .frame .initial{ font-family:var(--slab); font-size:2.8rem; color:var(--stone-3); }
 .pcard .nm{ font-family:var(--caps); font-size:0.84rem; letter-spacing:0.06em; color:var(--bone); margin-top:0.55rem; display:block; }
 .pcard .rl{ font-family:var(--serif); font-style:italic; font-size:0.78rem; color:var(--dust); }
